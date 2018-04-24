@@ -1,0 +1,54 @@
+# PHP CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-php/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version you desire here
+      - image: circleci/php:5.6.30-browsers
+      
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/mysql:9.4
+
+    working_directory: /var/www/html
+
+    steps:
+      - run:
+          name: permisos a la carpeta del proyecto
+          command: sudo chown -R circleci /var/www/html
+
+      - checkout
+
+      - run:
+          name: Instalar curl
+          command: sudo apt-get install curl
+
+      - run:
+          name: descargar getcomposer
+          command: sudo php -r "copy('https://getcomposer.org/installer', 'composer-setup.php')"
+
+      - run:
+          name: Instalar composer
+          command: sudo php composer-setup.php
+
+      - run:
+          name: Instalar Dependencias
+          command: /var/www/html/composer.phar install --no-interation
+
+      - run:
+          name: Mover Dependencias
+          command: mv vendor/ /var/www/html/v1
+
+      - run: composer install -n --prefer-dist
+
+      - save_cache:
+          paths:
+            - ./vendor
+          key: v1-dependencies-{{ checksum "composer.json" }}
+        
+      # run tests!
+      - run: phpunit
